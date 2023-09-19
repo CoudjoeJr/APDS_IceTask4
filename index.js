@@ -3,6 +3,8 @@ const app = express()
 const User = require('./Models/users')
 const bcrypt = require('bcrypt')
 const fs = require('fs')
+const jwt = require('jsonwebtoken')
+const isAuthenticated = required('./Models/auth')
 const port = 2000
 const mongoose = require('mongoose')
 const { error } = require('console')
@@ -53,6 +55,33 @@ app.post('/register', (req, res) => {
     })
     .catch(err => {
         res.status(500).json({error: 'Failed to hash'})
+    })
+})
+
+//Ice Task 5 code from line 62 to 86
+app.post('/signin', (req, res) => {
+    const {username, password} = req.body
+    User.findOne({ username })
+    .then(user =>{
+        if(!user){
+            return res.status(401).json({error: 'User does not exist'})
+        }
+        bcrypt.compare(password, user.password)
+        .then(match => {
+            if(match) {
+                const token = jwt.sign({username: user.username, userid: user._id},
+                    'MywebtokenStringToSecurelyMyToken', {expiresIn: '4h'})
+                    res.status(200).json({message: 'Welcome' + username, token: token})
+            }else{
+                res.status(401).json({error: 'Authentication failed'})
+            }
+        })
+        .catch(err => {
+            res.status(500).json({error: 'Please check password or username'})
+        })
+    })
+    .catch(err => {
+        res.status(500).json({error: 'User does not exist'})
     })
 })
 
